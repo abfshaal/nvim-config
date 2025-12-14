@@ -11,7 +11,12 @@ return {
       local dapui = require("dapui")
 
       -- Setup dap-ui
-      dapui.setup()
+      dapui.setup({
+        floating = {
+          max_height = 0.9,
+          max_width = 0.9,
+        },
+      })
 
       -- Setup virtual text
       require("nvim-dap-virtual-text").setup()
@@ -59,6 +64,14 @@ return {
         dapui.close()
       end
 
+      -- Fix keybindings in DAP UI buffers (use normal mode, not insert mode)
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = "dapui_*",
+        callback = function()
+          vim.bo.modifiable = true
+        end,
+      })
+
       -- Debug keymaps
       vim.keymap.set("n", "dr", dap.continue, { desc = "Debug: Continue/Start debugging" })
       vim.keymap.set("n", "<leader>do", dap.step_over, { desc = "Debug: Step over" })
@@ -101,11 +114,13 @@ return {
       vim.keymap.set("n", "<leader>df", function()
         dapui.float_element("repl")
       end, { desc = "Debug UI: Float REPL" })
+
+      -- Terminate debugging session
+      vim.keymap.set("n", "<leader>dT", dap.terminate, { desc = "Debug: Terminate session" })
     end,
   },
   {
     "mfussenegger/nvim-dap-python",
-    ft = "python",
     dependencies = {
       "mfussenegger/nvim-dap",
     },

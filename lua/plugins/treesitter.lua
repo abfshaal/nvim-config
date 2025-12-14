@@ -19,7 +19,13 @@ return {
     opts_extend = { "ensure_installed" },
     opts = {
       indent = { enable = true },
-      highlight = { enable = true },
+      highlight = {
+        enable = true,
+        additional_vim_regex_highlighting = false,
+        disable = function(lang, buf)
+          return false
+        end,
+      },
       folds = { enable = true },
       ensure_installed = {
         "bash",

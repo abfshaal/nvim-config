@@ -7,6 +7,15 @@ local map = vim.keymap.set
 
 map({ "t" }, "<Esc><Esc>", vim.api.nvim_replace_termcodes("<C-\\><C-N>", true, true, true))
 
+-- put this instead of your current jk mapping
+map({ "i", "t" }, "kj", function()
+  local ft = vim.bo.filetype
+  if ft == "lazygit" or ft == "TelescopePrompt" or ft == "toggleterm" then
+    return "kj" -- don't escape; just insert jk in those buffers
+  end
+  return vim.api.nvim_replace_termcodes("<C-\\><C-N>", true, true, true)
+end, { expr = true, noremap = true, silent = true })
+
 map({ "n", "v" }, "H", "^")
 map({ "n", "v" }, "L", "$")
 
@@ -53,3 +62,17 @@ map({ "n" }, "<leader>cn", "i# %%<Esc>o<Esc>x")
 map({ "n" }, "<C-y>", "<cmd>call augment#Accept()<cr>")
 
 map({ "n" }, "<leader>ghf", "<cmd>Gitsigns preview_hunk<cr>")
+
+-- Lazygit integration
+map({ "n" }, "<leader>gg", function()
+  Snacks.lazygit()
+end, { desc = "Lazygit" })
+
+-- Terminal navigation: jump to previous/next user question
+map({ "n" }, "[c", function()
+  vim.fn.search("^> ", "b")
+end, { desc = "Jump to previous question in terminal" })
+
+map({ "n" }, "]c", function()
+  vim.fn.search("^> ")
+end, { desc = "Jump to next question in terminal" })
