@@ -1524,6 +1524,39 @@ function M.deny_current_diff()
   M._resolve_diff_as_rejected(tab_name)
 end
 
+function M.hide_current_diff_view()
+  local tab_name = current_diff_tab_name()
+  if not tab_name then
+    vim.notify("No active diff to hide", vim.log.levels.WARN)
+    return
+  end
+
+  local hidden = diff_float.hide(tab_name)
+  if not hidden then
+    vim.notify("Diff window is already hidden", vim.log.levels.INFO)
+  end
+end
+
+function M.show_current_diff_view()
+  local tab_name = current_diff_tab_name()
+  if not tab_name then
+    vim.notify("No active diff to show", vim.log.levels.WARN)
+    return
+  end
+
+  if diff_float.show(tab_name) then
+    return
+  end
+
+  local diff_data = active_diffs[tab_name]
+  if not diff_data then
+    vim.notify("Claude diff data missing; cannot reopen float", vim.log.levels.ERROR)
+    return
+  end
+
+  open_floating_diff_view(diff_data.old_file_path, diff_data.new_file_path, diff_data.new_file_contents, tab_name)
+end
+
 return M
 ---@alias NvimWin integer
 ---@alias NvimBuf integer

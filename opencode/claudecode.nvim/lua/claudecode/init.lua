@@ -1042,6 +1042,20 @@ function M._create_commands()
     desc = "Deny/reject the current diff changes",
   })
 
+  vim.api.nvim_create_user_command("ClaudeCodeDiffHide", function()
+    local diff = require("claudecode.diff")
+    diff.hide_current_diff_view()
+  end, {
+    desc = "Hide the Claude diff floating window",
+  })
+
+  vim.api.nvim_create_user_command("ClaudeCodeDiffShow", function()
+    local diff = require("claudecode.diff")
+    diff.show_current_diff_view()
+  end, {
+    desc = "Reopen the Claude diff floating window",
+  })
+
   vim.api.nvim_create_user_command("ClaudeCodeSelectModel", function(opts)
     local cmd_args = opts.args and opts.args ~= "" and opts.args or nil
     M.open_with_model(cmd_args)
