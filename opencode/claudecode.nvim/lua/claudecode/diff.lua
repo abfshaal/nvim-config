@@ -141,9 +141,13 @@ local function build_diff_text(old_file_path, new_file_path, new_file_contents)
 
   local diff_output = nil
   if vim.diff then
+    local old_lines = vim.split(old_content, "\n", { plain = true, trimempty = false })
+    local new_lines = vim.split(new_content, "\n", { plain = true, trimempty = false })
+    local ctxlen = math.max(#old_lines, #new_lines)
     diff_output = vim.diff(old_content, new_content, {
       result_type = "unified",
       algorithm = "histogram",
+      ctxlen = ctxlen,
     })
   end
 

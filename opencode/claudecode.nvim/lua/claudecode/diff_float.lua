@@ -6,6 +6,90 @@ local state = {
   hidden = false,
 }
 
+local function is_change_line(text)
+  if not text or text == "" then
+    return false
+  end
+  if text:sub(1, 2) == "@@" then
+    return true
+  end
+  if text:sub(1, 3) == "+++" or text:sub(1, 3) == "---" then
+    return false
+  end
+  local first = text:sub(1, 1)
+  return first == "+" or first == "-"
+end
+
+local function is_hunk_start(buf, line)
+  local text = vim.api.nvim_buf_get_lines(buf, line, line + 1, false)[1]
+  if not text then
+    return false
+  end
+
+  if text:sub(1, 2) == "@@" then
+    return true
+  end
+
+  if not is_change_line(text) then
+    return false
+  end
+
+  if line == 0 then
+    return true
+  end
+
+  local prev = vim.api.nvim_buf_get_lines(buf, line - 1, line, false)[1]
+  if not prev then
+    return true
+  end
+
+  if prev:match("^@@") then
+    return true
+  end
+
+  return not is_change_line(prev)
+end
+
+local function find_hunk_line(buf, start_line, direction)
+  if not (buf and vim.api.nvim_buf_is_valid(buf)) then
+    return nil
+  end
+
+  local line_count = vim.api.nvim_buf_line_count(buf)
+  if line_count == 0 then
+    return nil
+  end
+
+  local step = direction == "forward" and 1 or -1
+  local line = start_line + step
+
+  while line >= 0 and line < line_count do
+    if is_hunk_start(buf, line) then
+      return line
+    end
+    line = line + step
+  end
+
+  return nil
+end
+
+local function jump_to_hunk(direction)
+  if not (state.win and vim.api.nvim_win_is_valid(state.win)) then
+    return
+  end
+
+  local cursor = vim.api.nvim_win_get_cursor(state.win)
+  local current_line = cursor[1] - 1
+  local target_line = find_hunk_line(state.buf, current_line, direction)
+
+  if target_line then
+    vim.api.nvim_win_set_cursor(state.win, { target_line + 1, 0 })
+  else
+    local msg = direction == "forward" and "No next diff hunk" or "No previous diff hunk"
+    vim.notify("Claude diff: " .. msg, vim.log.levels.INFO)
+  end
+end
+
 local function close_window()
   if state.win and vim.api.nvim_win_is_valid(state.win) then
     pcall(vim.api.nvim_win_close, state.win, true)
@@ -101,8 +185,15 @@ function M.open(diff_lines, tab_name)
   vim.keymap.set("n", "a", function() close_float("accept") end, opts)
   vim.keymap.set("n", "q", function() close_float("deny") end, opts)
   vim.keymap.set("n", "<Esc>", function() close_float("deny") end, opts)
+  vim.keymap.set("n", "]h", function() jump_to_hunk("forward") end, opts)
+  vim.keymap.set("n", "[h", function() jump_to_hunk("backward") end, opts)
 
-  open_window()
+  if open_window() then
+    local first_hunk = find_hunk_line(buf, -1, "forward")
+    if first_hunk then
+      vim.api.nvim_win_set_cursor(state.win, { first_hunk + 1, 0 })
+    end
+  end
 end
 
 function M.close(tab_name)
